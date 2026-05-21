@@ -20,6 +20,7 @@ const protect = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
+      include: { candidate: true },
     });
 
     if (!user) {
@@ -30,6 +31,8 @@ const protect = async (req, res, next) => {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
+      candidateId: user.candidate?.id || null,
     };
 
     next();

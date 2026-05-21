@@ -3,6 +3,9 @@ import prisma from "../config/prisma.js";
 const logActivity = async ({
   userId,
   applicationId = null,
+  jobId = null,
+  candidateId = null,
+  hireApplicationId = null,
   action,
   details = null,
 }) => {
@@ -11,6 +14,9 @@ const logActivity = async ({
       data: {
         userId,
         applicationId,
+        jobId,
+        candidateId,
+        hireApplicationId,
         action,
         details,
       },

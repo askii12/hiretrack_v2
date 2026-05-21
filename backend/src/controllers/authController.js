@@ -2,15 +2,33 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../config/prisma.js";
 
+const ALLOWED_ROLES = ["ADMIN", "RECRUITER", "CANDIDATE"];
+
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 };
 
+const sanitizeUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  candidateId: user.candidate?.id || null,
+});
+
+const resolveRole = (requestedRole, actorRole) => {
+  if (actorRole === "ADMIN" && requestedRole && ALLOWED_ROLES.includes(requestedRole)) {
+    return requestedRole;
+  }
+
+  return "CANDIDATE";
+};
+
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role, phone, resume, skills } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -30,6 +48,9 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    const userCount = await prisma.user.count();
+    const finalRole =
+      userCount === 0 ? "ADMIN" : resolveRole(role, req.user?.role);
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
@@ -37,7 +58,22 @@ export const registerUser = async (req, res) => {
         name,
         email,
         password: hashedPassword,
+        role: finalRole,
+        ...(finalRole === "CANDIDATE"
+          ? {
+              candidate: {
+                create: {
+                  name,
+                  email,
+                  phone: phone || null,
+                  resume: resume || null,
+                  skills: skills || null,
+                },
+              },
+            }
+          : {}),
       },
+      include: { candidate: true },
     });
 
     const token = generateToken(user.id);
@@ -45,11 +81,7 @@ export const registerUser = async (req, res) => {
     res.status(201).json({
       message: "User registered successfully",
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
+      user: sanitizeUser(user),
     });
   } catch (error) {
     console.error("Register error:", error);
@@ -69,6 +101,7 @@ export const loginUser = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { email },
+      include: { candidate: true },
     });
 
     if (!user) {
@@ -86,11 +119,7 @@ export const loginUser = async (req, res) => {
     res.status(200).json({
       message: "Login successful",
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
+      user: sanitizeUser(user),
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -100,10 +129,6 @@ export const loginUser = async (req, res) => {
 
 export const getMe = async (req, res) => {
   res.status(200).json({
-    user: {
-      id: req.user.id,
-      name: req.user.name,
-      email: req.user.email,
-    },
+    user: req.user,
   });
 };

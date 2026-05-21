@@ -2,9 +2,13 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes.js";
-import applicationRoutes from "./routes/applicationRoutes.js";
+import jobRoutes from "./routes/jobRoutes.js";
+import candidateRoutes from "./routes/candidateRoutes.js";
+import hireApplicationRoutes from "./routes/hireApplicationRoutes.js";
+import trackerRoutes from "./routes/trackerRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import statsRoutes from "./routes/statsRoutes.js";
 
 const app = express();
 
@@ -23,8 +27,12 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/applications", applicationRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/candidates", candidateRoutes);
+app.use("/api/applications", hireApplicationRoutes);
+app.use("/api/tracker/applications", trackerRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/stats", statsRoutes);
 
 export default app;
