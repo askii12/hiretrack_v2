@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+a {
+  @apply text-sky-600 hover:text-sky-700 transition-colors;
+}
+
+button {
+  @apply cursor-pointer;
+}
